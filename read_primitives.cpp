@@ -13,7 +13,6 @@
 #include <netinet/if_ether.h>
 #include <netpacket/packet.h>
 #include <arpa/inet.h>
-#include <time.h>
 #include <inttypes.h>
 #include <signal.h>
 #include <errno.h>
@@ -27,8 +26,6 @@ using namespace std;
 
 char str[80];
 char str_res[10][80];
-
-FILE *file0;
 
 int *tsbuffer0_phy;
 int *tempbuffer;
@@ -49,14 +46,12 @@ float *evtts;
 int length_received;
 int length_sent;
 int nIP=1;
-int   numberofpackets_received =0;
-int   numberofpackets_sent =0;
+int numberofpackets_received = 0;
+int numberofpackets_sent = 0;
 
 char sdate[150];
 char file_output_name[150];
 
-struct tm *tt;
-time_t tim;
 
 int ir;
 int ieth;
@@ -134,22 +129,13 @@ void sighandler(int i){
     int t;
 
 
-    if (i==SIGINT || i== SIGSEGV || 1) {
+    if (i == SIGINT || i == SIGSEGV || 1) {
         printf("----  %d primitive packets received\n",npacket_phy_tot);
 
-        if (file0 != NULL) {
-            fwrite(tsbuffer0_phy , sizeof(u32), old_dim_phy/4, file0 );
-            ind=0;
-            ind1=0;
-            ntstamp0=0;
-        }
-
-        printf("SoB Packets: %d\n",npacket_sob);
-        printf("Physics Packets: %d\n",npacket_phy_tot);
-        printf("EoB Packets: %d\n",npacket_eob);
-        printf("Number of Bad file descriptor errors: %d\n",nbad);
-
-        //   fclose(file0);
+        printf("SoB Packets: %d\n", npacket_sob);
+        printf("Physics Packets: %d\n", npacket_phy_tot);
+        printf("EoB Packets: %d\n", npacket_eob);
+        printf("Number of Bad file descriptor errors: %d\n", nbad);
     }
     if (i != -1)
         exit(1);
@@ -158,9 +144,8 @@ void sighandler(int i){
 
 int main(int argc, char **argv){
     int sob_msg, eob_msg;
-
     int a=1;
-    // int numberofpackets_sent;
+
     //Burst Timing;
     FakeDim Timing;
 
@@ -168,22 +153,14 @@ int main(int argc, char **argv){
     int i=0;
     //char *address[3];
     // address[0] = "10.84.20.33";
-    //address[1] = "10.84.20.34";
-    //address[2] = "10.84.20.35";
 
     /*
      * Print all ip address
      * set from l0server (Run Control)
      */
-    printf("argv size: %d\n",argc);
-    for(int i=0; i<argc; i++){
-        printf("argv: %s\n",argv[i]);
-    }
-
-    status125_result = (int *) malloc( sizeof(int));
-    if(status125_result == NULL) {
-        printf("Can't allocate memory for reading status\n");
-        return -1;
+    printf("argv size: %d\n", argc);
+    for (int i=0; i < argc; i++) {
+        printf("argv: %s\n", argv[i]);
     }
 
     /*
@@ -191,21 +168,20 @@ int main(int argc, char **argv){
      * Receive from FPGA
      */
     fromDE4 = socket(AF_INET,SOCK_DGRAM,0);
-    if ( fromDE4 == -1 ) {
-        displayError("socket(1)");
+    if (fromDE4 == -1) {
+        displayError("Error opening socket to fpga");
     }
+
     /*---RECEIVING FROM DE4------------*/
-    memset(&adr_inet,0,sizeof adr_inet);
+    memset(&adr_inet, 0, sizeof adr_inet);
     adr_inet.sin_family = AF_INET;
     adr_inet.sin_port = htons(58913);
     adr_inet.sin_addr.s_addr =  inet_addr("192.168.1.20");//Addres of this computer
 
-
-    if ( adr_inet.sin_addr.s_addr == INADDR_NONE ) {
+    if (adr_inet.sin_addr.s_addr == INADDR_NONE) {
         displayError("bad address.");
     }
     len_inet = sizeof adr_inet;
-
 
     z = bind(fromDE4, (struct sockaddr *)&adr_inet, len_inet);
     if ( z == -1 ) {
@@ -214,7 +190,7 @@ int main(int argc, char **argv){
 
     /**************SENDING TO FARM*********************/
     toFARM = socket(AF_INET,SOCK_DGRAM,0);
-    if ( toFARM == -1 ) {
+    if (toFARM == -1) {
         displayError("Error opening socket to farm");
     }
 
@@ -229,41 +205,38 @@ int main(int argc, char **argv){
     len_inet1 = sizeof adr_inet1;
     //bind(toFARM, (struct sockaddr *)&adr_inet1,len_inet1);
 
-
     /*******************RECEIVING FROM DE4***********************/
-    for (int g=0;g<10000;g++){
+    for (int g = 0; g < 10000; g++){
         tsbuffer_length_phy[g]= -1;
     }
-    signal(SIGINT,sighandler);
+    signal(SIGINT, sighandler);
 
     //       cout<<"read to receive from de4"<<endl;
 
     while(1){
-       if(Timing.GetInBurst() && !InBurst){
            InBurst = 1;
-           tim = time (NULL);
-           tt = localtime(&tim);
-           ind1=0;
-           ind=0;
-           nbad=0;
-           npacket_sob=0;
-           npacket_eob=0;
-           npacket_phy=0;
-           npacket_phy_tot=0;
-           new_eob=0;
-           ntstamp0=0;
-           old_dim_sob=0;
-           old_dim_phy=0;
-           old_dim_eob=0;
-           ir=0;
+           ind1 = 0;
+           ind = 0;
+           nbad = 0;
+           npacket_sob = 0;
+           npacket_eob = 0;
+           npacket_phy = 0;
+           npacket_phy_tot = 0;
+           new_eob = 0;
+           ntstamp0 = 0;
+           old_dim_sob = 0;
+           old_dim_phy = 0;
+           old_dim_eob = 0;
+           ir = 0;
 
            while(a){
                length_received = recvfrom(fromDE4,
                        primitive,
                        sizeof primitive, // Max recv buf size   */
                        0,
-                       (struct sockaddr *)&adr_clnt,
-                       (socklen_t*)&adr_clnt);
+                       (struct sockaddr *) &adr_clnt,
+                       (socklen_t*) &adr_clnt
+               );
 
                if ( length_received < 0 ) displayError("recvfrom(2)");
 
@@ -278,11 +251,13 @@ int main(int argc, char **argv){
                        primitive,
                        length_received,
                        0,
-                       (struct sockaddr *)&adr_inet1,
-                       sizeof(adr_inet1));
+                       (struct sockaddr *) &adr_inet1,
+                       sizeof(adr_inet1)
+               );
+
                //    hexdump((void*)&primitive,40);
                if(length_sent!=0 && length_sent!=-1) {
-                   numberofpackets_sent +=1;
+                   ++numberofpackets_sent;
                } else {
                    cout<<"packet not sent"<<endl;
                }
@@ -292,17 +267,20 @@ int main(int argc, char **argv){
                 * Loop on all packets
                 * and set back to 1
                 */
-               if (address_skip==0){
-                   if(numberofpackets_sent%address_skip==0 || numberofpackets_sent==1) {
-                       if(nIP!=argc-1) nIP+=1;
-                       else nIP=1;
+               if (address_skip == 0) {
+                   if (numberofpackets_sent%address_skip == 0 || numberofpackets_sent == 1) {
+                       if (nIP != argc-1) {
+                           ++nIP;
+                       } else {
+                           nIP = 1;
+                       }
                    }
                } else {
-                   if(numberofpackets_sent%address_skip==0) {
+                   if (numberofpackets_sent%address_skip == 0) {
                        if(nIP!=argc-1) {
-                           nIP+=1;
+                           ++nIP;
                        }else{
-                           nIP=1;
+                           nIP = 1;
                        }
                    }
                }
@@ -315,13 +293,11 @@ int main(int argc, char **argv){
                    break;
                }
            } //end of while(a)
-        }
 
         if(!Timing.GetInBurst() && InBurst){
             InBurst = 0;
         }
     }
-
 return 0;
 }
 
