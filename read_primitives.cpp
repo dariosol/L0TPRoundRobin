@@ -106,6 +106,11 @@ class Burst : public DimClient {
     int InBurst;
 };
 
+class FakeDim {
+    public:
+    int GetInBurst(){return 1;}
+};
+
 /*
  * Show messages in run control
  */
@@ -156,7 +161,9 @@ int main(int argc, char **argv){
 
     int a=1;
     // int numberofpackets_sent;
-    Burst Timing;
+    //Burst Timing;
+    FakeDim Timing;
+
     int InBurst = 0;
     int i=0;
     //char *address[3];
@@ -192,6 +199,7 @@ int main(int argc, char **argv){
     adr_inet.sin_family = AF_INET;
     adr_inet.sin_port = htons(58913);
     adr_inet.sin_addr.s_addr =  inet_addr("192.168.1.20");//Addres of this computer
+
 
     if ( adr_inet.sin_addr.s_addr == INADDR_NONE ) {
         displayError("bad address.");
@@ -262,8 +270,7 @@ int main(int argc, char **argv){
                if(length_received!=0 && length_received!=-1) numberofpackets_received+=1;
 
                // hexdump((void*)&primitive,40);
-
-               //      cout<<"received from de4"<<endl;
+               // cout<<"received from de4"<<endl;
 
                /******************SENDING TO FARM****************************/
                adr_inet1.sin_addr.s_addr =  inet_addr(argv[nIP]);
@@ -274,29 +281,34 @@ int main(int argc, char **argv){
                        (struct sockaddr *)&adr_inet1,
                        sizeof(adr_inet1));
                //    hexdump((void*)&primitive,40);
-               if(length_sent!=0 && length_sent!=-1)  numberofpackets_sent +=1;
+               if(length_sent!=0 && length_sent!=-1) {
+                   numberofpackets_sent +=1;
+               } else {
+                   cout<<"packet not sent"<<endl;
+               }
                //cout<<"nIP: "<<argv[nIP]<<" numberofpackets_sent: "<<numberofpackets_sent<<endl;
 
+               /*
+                * Loop on all packets
+                * and set back to 1
+                */
                if (address_skip==0){
                    if(numberofpackets_sent%address_skip==0 || numberofpackets_sent==1) {
                        if(nIP!=argc-1) nIP+=1;
                        else nIP=1;
                    }
-               }
-
-               /*
-                * Loop on all packets
-                * adn set back to 1
-                */
-               if (address_skip!=0){
+               } else {
                    if(numberofpackets_sent%address_skip==0) {
-                       if(nIP!=argc-1) nIP+=1;
-                       else nIP=1;
+                       if(nIP!=argc-1) {
+                           nIP+=1;
+                       }else{
+                           nIP=1;
+                       }
                    }
                }
 
-               if ( length_sent < 0 ) {  
-                   displayError("sendto(2)"); 
+               if ( length_sent < 0 ) {
+                   displayError("sendto(2)");
                }
 
                if(!Timing.GetInBurst() || old_dim_phy/4 >= store_size - 20) {
