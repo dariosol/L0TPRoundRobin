@@ -17,35 +17,29 @@ LIBFLAGS = $(LDFLAGS) -L$(ODIMDIR) -ldim -lpthread \
 	-lna62-farm-lib -L"./na62-farm-lib/Debug" \
 	-lna62-farm-lib-networking -L"./na62-farm-lib-networking/Debug"
 
-all:	read_primitives 
+all: read_primitives
 
 #read_primitives:	read_primitives.cpp
 #	g++ -g -o read_primitives.o $(INCFLAGS) $(OPTFLAGS) -c read_primitives.cpp	
 #	g++ -g -DVERBOSE -o $(BINDIR)/read_primitives read_primitives.o  $(LIBFLAGS)
 
 
-
-#read_primitives.o: read_primitives.cpp ./na62-farm-lib/Debug/libna62-farm-lib.a
-#	$(CC) $(OPTFLAGS) -c read_primitives.cpp $(INCFLAGS) $(LIBFLAGS)
-
-
-
-#read_primitives.o: read_primitives.cpp ./na62-farm-lib/Debug/libna62-farm-lib.a ./na62-farm-lib-networking/Debug/libna62-farm-lib-networking.a
-#	$(CC) $(OPTFLAGS) -c read_primitives.cpp $(LIBFLAGS) $(INCFLAGS) 
-
-#	$(CC) $(OPTFLAGS) -c read_primitives.cpp $(LIBFLAGS) $(INCFLAGS) 
-
 read_primitives: read_primitives.o ./na62-farm-lib/Debug/libna62-farm-lib.a ./na62-farm-lib-networking/Debug/libna62-farm-lib-networking.a
+	@echo 'Building target: $@'
+	@echo 'Invoking: GCC C++ Linker'
 	$(CC) -o $(BINDIR)/read_primitives read_primitives.o $(LIBFLAGS) $(INCFLAGS) ./na62-farm-lib/Debug/libna62-farm-lib.a ./na62-farm-lib-networking/Debug/libna62-farm-lib-networking.a
+	@echo 'Finished building target: $@'
+	@echo ' '
 
 read_primitives.o: read_primitives.cpp loopethernet.h ./na62-farm-lib/Debug/libna62-farm-lib.a ./na62-farm-lib-networking/Debug/libna62-farm-lib-networking.a
+	@echo 'Building target: $@'
+	@echo 'Invoking: GCC C++ Linker'
 	$(CC) $(OPTFLAGS) -c read_primitives.cpp $(LIBFLAGS) $(INCFLAGS) 
+	@echo 'Finished building target: $@'
+	@echo ' '
 
-
-#read_primitives: ./na62-farm-lib/Debug/libna62-farm-lib.a read_primitives.o
-#	@echo 'Building target: $@'
 #	@echo 'Invoking: GCC C++ Linker'
-#	$(CC) $(OPTFLAGS) -o $(BINDIR)/read_primitives $(INCFLAGS) $(LIBFLAGS)
+#	$(CC) $(OPTFLAGS) -c CustomMEP.cpp $(LIBFLAGS) $(INCFLAGS) 
 #	@echo 'Finished building target: $@'
 #	@echo ' '
 

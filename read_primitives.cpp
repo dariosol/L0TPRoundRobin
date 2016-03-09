@@ -1,26 +1,27 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <assert.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <net/if.h>
-#include <netinet/in.h>
-#include <netinet/ip.h> /* superset of previous */
-#include <netinet/if_ether.h>
-#include <netpacket/packet.h>
+//#include <stdio.h>
+//#include <stdlib.h>
+//#include <string.h>
+//#include <unistd.h>
+//#include <fcntl.h>
+//#include <assert.h>
+//#include <sys/ioctl.h>
+//#include <sys/socket.h>
+//#include <sys/types.h>
+//#include <net/if.h>
+//#include <netinet/in.h>
+//#include <netinet/ip.h> /* superset of previous */
+//#include <netinet/if_ether.h>
+//#include <netpacket/packet.h>
+//#include <inttypes.h>
+//#include <signal.h>
+//#include <errno.h>
+//#include <iostream>
+
 #include <arpa/inet.h>
-#include <inttypes.h>
-#include <signal.h>
-#include <errno.h>
-#include "loopethernet.h"
 #include <dic.hxx>
-#include <iostream>
 
 #include "user2.h"
+#include "loopethernet.h"
 
 //Na62-farm
 #include "structs/DataContainer.h"
@@ -30,17 +31,6 @@
 
 using namespace std;
 
-char str[80];
-char str_res[10][80];
-
-int *tsbuffer0_phy;
-int *tempbuffer;
-int tsbuffer_length_phy[300000];
-int nbad;
-int npacket_sob;
-int npacket_eob;
-int npacket_phy;
-int npacket_phy_tot;
 int npacket_no;
 int old_dim_sob;
 int old_dim_eob;
@@ -51,14 +41,9 @@ float *evtts;
 int length_received;
 int length_sent;
 int nIP=1;
-int numberofpackets_received = 0;
-int numberofpackets_sent = 0;
-
-char sdate[150];
-char file_output_name[150];
-
-int ieth;
-int eob;
+int packets_received = 0;
+int packets_per_burst = 0;
+int packets_sent = 0;
 
 #define debug 0
 #define debug_rate 0
@@ -69,15 +54,15 @@ int eob;
 
 #define packet_offset 0
 
-#define PORTA 58913
-#define PORTA_FARM 58913 
+#define PORT_DE4 58913
+#define PORT_FARM 58913 
 #define PACKET_TYPE_OFFSET 45
 int address_skip =1;
 
 class Burst : public DimClient {
     DimUpdatedInfo Sob;
     DimUpdatedInfo Eob;
-    public:
+     public:
     Burst(): Sob("NA62/Timing/SOB",-1,this), Eob("NA62/Timing/EOB",-1,this) {InBurst = 0;}
     int GetInBurst(){return InBurst;}
 
@@ -92,11 +77,11 @@ class Burst : public DimClient {
             cout << endl;
             InBurst = 0;
             nIP = 1;
-            printf("packet received %d\n",numberofpackets_received);
-            printf("packet sent %d\n",numberofpackets_sent);
+            printf("packet received %d\n",packets_received);
+            printf("packet sent %d\n",packets_sent);
 
-            numberofpackets_received =0;
-            numberofpackets_sent =0;
+            packets_received =0;
+            packets_sent =0;
         }
     }
     int InBurst;
@@ -123,11 +108,8 @@ static void displayError(const char *on_what) {
  */
 void sighandler(int i){
     if (i == SIGINT || i == SIGSEGV || 1) {
-        printf("----  %d primitive packets received\n",npacket_phy_tot);
-        printf("SoB Packets: %d\n", npacket_sob);
-        printf("Physics Packets: %d\n", npacket_phy_tot);
-        printf("EoB Packets: %d\n", npacket_eob);
-        printf("Number of Bad file descriptor errors: %d\n", nbad);
+        //printf("----  %d primitive packets received\n", npacket_phy_tot);
+        //you can print here your burst statistic
     }
     if (i != -1)
         exit(1);
@@ -162,7 +144,10 @@ int main(int argc, char **argv){
     /*---RECEIVING FROM DE4------------*/
     memset(&adr_inet, 0, sizeof adr_inet);
     adr_inet.sin_family = AF_INET;
-    adr_inet.sin_port = htons(58913);
+    adr_inet.sin_port = htons(PORT_DE4);
+
+
+
     adr_inet.sin_addr.s_addr =  inet_addr("192.168.1.20");//Addres of this computer
 
     if (adr_inet.sin_addr.s_addr == INADDR_NONE) {
@@ -183,7 +168,8 @@ int main(int argc, char **argv){
 
     bzero(&adr_inet1, sizeof(adr_inet1));
     adr_inet1.sin_family = AF_INET;
-    adr_inet1.sin_port = htons(58913);
+    adr_inet1.sin_port = htons(PORT_FARM);
+
     adr_inet1.sin_addr.s_addr =  inet_addr(argv[nIP]);
 
     if (adr_inet1.sin_addr.s_addr == INADDR_NONE) {
@@ -193,20 +179,25 @@ int main(int argc, char **argv){
     //bind(toFARM, (struct sockaddr *)&adr_inet1,len_inet1);
 
     /*******************RECEIVING FROM DE4***********************/
-    for (int g = 0; g < 10000; g++){
-        tsbuffer_length_phy[g]= -1;
-    }
     signal(SIGINT, sighandler);
 
-    //       cout<<"read to receive from de4"<<endl;
+    //cout<<"read to receive from de4"<<endl;
+
+    //To check the stream order
+    bool is_event_id_aligned = false;
+    bool is_stream_broken = false;
+    int flow_break_count = 0;
+
+    //Na62-farm-lib-function
+    na62::DataContainer container;
+    char * primitive_pointer = nullptr;
+    na62::l0::MEP* mep = nullptr;
+    int_fast16_t mep_factor_temp;
+    uint_fast32_t first_event_number_temp;
+    uint_fast32_t expected_first_event_number = 0;
 
     while(1){
            InBurst = 1;
-           nbad = 0;
-           npacket_sob = 0;
-           npacket_eob = 0;
-           npacket_phy = 0;
-           npacket_phy_tot = 0;
            new_eob = 0;
            old_dim_sob = 0;
            old_dim_phy = 0;
@@ -221,20 +212,15 @@ int main(int argc, char **argv){
                        (socklen_t*) &adr_clnt
                );
 
-               cout << "Packet length: "<< length_received << endl;
+               //cout << "Packet length: "<< length_received << endl;
 
                if ( length_received < 0 ) displayError("recvfrom(2)");
 
-               if(length_received!=0 && length_received!=-1) numberofpackets_received+=1;
+               if(length_received!=0 && length_received!=-1) {
+                   ++packets_received;
+                   ++packets_per_burst;
+               }
 
-
-
-               //Na62-farm-lib-function
-               na62::DataContainer container;
-               char * primitive_pointer = nullptr;
-               na62::l0::MEP* mep = nullptr;
-               int_fast16_t mep_factor_temp;
-	           uint_fast32_t fist_event_number_temp;
                //Na62-farm-lib-function
                primitive_pointer = primitive;
                container.data = primitive_pointer;
@@ -242,22 +228,36 @@ int main(int argc, char **argv){
                container.ownerMayFreeData = true;
 
                mep = new na62::l0::MEP(container.data, container.length, container);
+               first_event_number_temp = mep->getFirstEventNum();
                mep_factor_temp = mep->getNumberOfFragments();
-	           fist_event_number_temp = mep->getFirstEventNum();
-               cout <<"n fraqments: " <<mep_factor_temp<<endl;
 
+               //understand if a new burst is started
+               if (first_event_number_temp < expected_first_event_number) {
+                   is_event_id_aligned = false;
+                   packets_per_burst = 0;
+                   cout<<"New burst is started, received at packet: "<< dec <<packets_per_burst 
+                       << " Event Number " << first_event_number_temp 
+                       <<endl;
+                   cout<<"Broken packets: "<< flow_break_count<<endl;
+                   flow_break_count = 0;
+                   //cout<<"mep multiple? "<< abs((double) expected_first_event_number - (double) first_event_number_temp)/(double)mep_factor_temp<<endl;
+               }
+               //Check flow consistency
+               if(!is_event_id_aligned){
+                   is_event_id_aligned = true;
+                   //cout<<"Mp recognised: "<< dec << mep_factor_temp <<endl;
+                   expected_first_event_number = first_event_number_temp;
+               } else {
+                   expected_first_event_number = expected_first_event_number + mep_factor_temp;
+               }
 
-               //primitive_pointer = primitive;
-               //container.data = primitive_pointer;
-               //container.length = length_received;
-               //container.ownerMayFreeData = true;
-
-               //na62::l0::MEP* mep = new na62::l0::MEP(container.data, container.length, container);
-               //mep = new na62::l0::MEP(container.data, container.length, container);
-               //int_fast16_t mepfactorTEMP = mep->getNumberOfFragments();
-	           //uint_fast32_t fist_event_number_temp = mep->getFirstEventNum();
-               //cout <<"n fraqments: " <<mepfactorTEMP<<endl;
-
+               if (first_event_number_temp > expected_first_event_number) {
+                   is_event_id_aligned = false;
+                   is_stream_broken = true;
+                   //cout<<"Stream Broken at packet: "<< dec <<packets_per_burst << " expecting: "<< expected_first_event_number << " instead: " << first_event_number_temp <<endl;
+                   //cout<<"mep multiple? "<< abs((double) expectedfirst_event_number - (double) first_event_number_temp)/(double)mep_factor_temp<<endl;
+                   ++flow_break_count;
+               }
 
                // hexdump((void*)&primitive,40);
                // cout<<"received from de4"<<endl;
@@ -274,18 +274,18 @@ int main(int argc, char **argv){
 
                //    hexdump((void*)&primitive,40);
                if(length_sent!=0 && length_sent!=-1) {
-                   ++numberofpackets_sent;
+                   ++packets_sent;
                } else {
                    cout<<"packet not sent"<<endl;
                }
-               //cout<<"nIP: "<<argv[nIP]<<" numberofpackets_sent: "<<numberofpackets_sent<<endl;
+               //cout<<"nIP: "<<argv[nIP]<<" packets_sent: "<<packets_sent<<endl;
 
                /*
                 * Loop on all packets
                 * and set back to 1
                 */
                if (address_skip == 0) {
-                   if (numberofpackets_sent%address_skip == 0 || numberofpackets_sent == 1) {
+                   if (packets_sent%address_skip == 0 || packets_sent == 1) {
                        if (nIP != argc-1) {
                            ++nIP;
                        } else {
@@ -293,7 +293,7 @@ int main(int argc, char **argv){
                        }
                    }
                } else {
-                   if (numberofpackets_sent%address_skip == 0) {
+                   if (packets_sent%address_skip == 0) {
                        if(nIP!=argc-1) {
                            ++nIP;
                        }else{
