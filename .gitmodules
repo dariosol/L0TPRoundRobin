@@ -1,3 +1,6 @@
 [submodule "na62-farm-lib"]
 	path = na62-farm-lib
 	url = https://github.com/NA62/na62-farm-lib
+[submodule "na62-farm-lib-networking"]
+	path = na62-farm-lib-networking
+	url = https://github.com/NA62/na62-farm-lib-networking.git

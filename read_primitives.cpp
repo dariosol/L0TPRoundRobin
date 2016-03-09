@@ -22,6 +22,12 @@
 
 #include "user2.h"
 
+//Na62-farm
+#include "structs/DataContainer.h"
+#include <socket/EthernetUtils.h>
+#include "l0/MEP.h"
+//end Na62-farm
+
 using namespace std;
 
 char str[80];
@@ -30,7 +36,6 @@ char str_res[10][80];
 int *tsbuffer0_phy;
 int *tempbuffer;
 int tsbuffer_length_phy[300000];
-int ntstamp0;
 int nbad;
 int npacket_sob;
 int npacket_eob;
@@ -52,12 +57,8 @@ int numberofpackets_sent = 0;
 char sdate[150];
 char file_output_name[150];
 
-
-int ir;
 int ieth;
 int eob;
-int ind1;
-int ind;
 
 #define debug 0
 #define debug_rate 0
@@ -117,21 +118,12 @@ static void displayError(const char *on_what) {
     exit(1);
 }
 
-
 /*
  * Show messages in run control
  */
 void sighandler(int i){
-    int j;
-    int oldlength=0;
-    int word;
-    int i_c;
-    int t;
-
-
     if (i == SIGINT || i == SIGSEGV || 1) {
         printf("----  %d primitive packets received\n",npacket_phy_tot);
-
         printf("SoB Packets: %d\n", npacket_sob);
         printf("Physics Packets: %d\n", npacket_phy_tot);
         printf("EoB Packets: %d\n", npacket_eob);
@@ -141,18 +133,13 @@ void sighandler(int i){
         exit(1);
 }
 
-
 int main(int argc, char **argv){
-    int sob_msg, eob_msg;
-    int a=1;
+    int aaa=1;
 
     //Burst Timing;
     FakeDim Timing;
 
     int InBurst = 0;
-    int i=0;
-    //char *address[3];
-    // address[0] = "10.84.20.33";
 
     /*
      * Print all ip address
@@ -167,7 +154,7 @@ int main(int argc, char **argv){
      * Create a UDP socket to use:
      * Receive from FPGA
      */
-    fromDE4 = socket(AF_INET,SOCK_DGRAM,0);
+    fromDE4 = socket(AF_INET,SOCK_DGRAM, 0);
     if (fromDE4 == -1) {
         displayError("Error opening socket to fpga");
     }
@@ -194,12 +181,12 @@ int main(int argc, char **argv){
         displayError("Error opening socket to farm");
     }
 
-    bzero(&adr_inet1,sizeof(adr_inet1));
+    bzero(&adr_inet1, sizeof(adr_inet1));
     adr_inet1.sin_family = AF_INET;
     adr_inet1.sin_port = htons(58913);
     adr_inet1.sin_addr.s_addr =  inet_addr(argv[nIP]);
 
-    if ( adr_inet1.sin_addr.s_addr == INADDR_NONE ) {
+    if (adr_inet1.sin_addr.s_addr == INADDR_NONE) {
         displayError("bad address sending.");
     }
     len_inet1 = sizeof adr_inet1;
@@ -215,32 +202,62 @@ int main(int argc, char **argv){
 
     while(1){
            InBurst = 1;
-           ind1 = 0;
-           ind = 0;
            nbad = 0;
            npacket_sob = 0;
            npacket_eob = 0;
            npacket_phy = 0;
            npacket_phy_tot = 0;
            new_eob = 0;
-           ntstamp0 = 0;
            old_dim_sob = 0;
            old_dim_phy = 0;
            old_dim_eob = 0;
-           ir = 0;
 
-           while(a){
+           while(aaa){
                length_received = recvfrom(fromDE4,
                        primitive,
-                       sizeof primitive, // Max recv buf size   */
+                       2048, // Max recv buf size   */
                        0,
                        (struct sockaddr *) &adr_clnt,
                        (socklen_t*) &adr_clnt
                );
 
+               cout << "Packet length: "<< length_received << endl;
+
                if ( length_received < 0 ) displayError("recvfrom(2)");
 
                if(length_received!=0 && length_received!=-1) numberofpackets_received+=1;
+
+
+
+               //Na62-farm-lib-function
+               na62::DataContainer container;
+               char * primitive_pointer = nullptr;
+               na62::l0::MEP* mep = nullptr;
+               int_fast16_t mep_factor_temp;
+	           uint_fast32_t fist_event_number_temp;
+               //Na62-farm-lib-function
+               primitive_pointer = primitive;
+               container.data = primitive_pointer;
+               container.length = length_received;
+               container.ownerMayFreeData = true;
+
+               mep = new na62::l0::MEP(container.data, container.length, container);
+               mep_factor_temp = mep->getNumberOfFragments();
+	           fist_event_number_temp = mep->getFirstEventNum();
+               cout <<"n fraqments: " <<mep_factor_temp<<endl;
+
+
+               //primitive_pointer = primitive;
+               //container.data = primitive_pointer;
+               //container.length = length_received;
+               //container.ownerMayFreeData = true;
+
+               //na62::l0::MEP* mep = new na62::l0::MEP(container.data, container.length, container);
+               //mep = new na62::l0::MEP(container.data, container.length, container);
+               //int_fast16_t mepfactorTEMP = mep->getNumberOfFragments();
+	           //uint_fast32_t fist_event_number_temp = mep->getFirstEventNum();
+               //cout <<"n fraqments: " <<mepfactorTEMP<<endl;
+
 
                // hexdump((void*)&primitive,40);
                // cout<<"received from de4"<<endl;
