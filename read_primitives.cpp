@@ -1,21 +1,5 @@
-//#include <stdio.h>
-//#include <stdlib.h>
-//#include <string.h>
-//#include <unistd.h>
-//#include <fcntl.h>
-//#include <assert.h>
-//#include <sys/ioctl.h>
-//#include <sys/socket.h>
-//#include <sys/types.h>
-//#include <net/if.h>
-//#include <netinet/in.h>
-//#include <netinet/ip.h> /* superset of previous */
-//#include <netinet/if_ether.h>
-//#include <netpacket/packet.h>
-//#include <inttypes.h>
-//#include <signal.h>
-//#include <errno.h>
-//#include <iostream>
+#include <stdio.h>
+#include <iostream>
 
 #include <arpa/inet.h>
 #include <dic.hxx>
@@ -23,11 +7,7 @@
 #include "user2.h"
 #include "loopethernet.h"
 
-//Na62-farm
-#include "structs/DataContainer.h"
-#include <socket/EthernetUtils.h>
-#include "l0/MEP.h"
-//end Na62-farm
+#include "CustomMEP.h"
 
 using namespace std;
 
@@ -107,6 +87,7 @@ static void displayError(const char *on_what) {
  * Show messages in run control
  */
 void sighandler(int i){
+    cout<<"I have been killed"<<endl;
     if (i == SIGINT || i == SIGSEGV || 1) {
         //printf("----  %d primitive packets received\n", npacket_phy_tot);
         //you can print here your burst statistic
@@ -146,12 +127,10 @@ int main(int argc, char **argv){
     adr_inet.sin_family = AF_INET;
     adr_inet.sin_port = htons(PORT_DE4);
 
-
-
     adr_inet.sin_addr.s_addr =  inet_addr("192.168.1.20");//Addres of this computer
 
     if (adr_inet.sin_addr.s_addr == INADDR_NONE) {
-        displayError("bad address.");
+        displayError("bad address receiving.");
     }
     len_inet = sizeof adr_inet;
 
@@ -189,9 +168,10 @@ int main(int argc, char **argv){
     int flow_break_count = 0;
 
     //Na62-farm-lib-function
-    na62::DataContainer container;
+    //na62::DataContainer container;
     char * primitive_pointer = nullptr;
-    na62::l0::MEP* mep = nullptr;
+    na62::l0::CustomMEP* mep = nullptr;
+    //CustomMEP* mep = nullptr;
     int_fast16_t mep_factor_temp;
     uint_fast32_t first_event_number_temp;
     uint_fast32_t expected_first_event_number = 0;
@@ -221,27 +201,25 @@ int main(int argc, char **argv){
                    ++packets_per_burst;
                }
 
-               //Na62-farm-lib-function
                primitive_pointer = primitive;
-               container.data = primitive_pointer;
-               container.length = length_received;
-               container.ownerMayFreeData = true;
 
-               mep = new na62::l0::MEP(container.data, container.length, container);
+               mep = new na62::l0::CustomMEP(primitive_pointer, length_received);
                first_event_number_temp = mep->getFirstEventNum();
                mep_factor_temp = mep->getNumberOfFragments();
 
                //understand if a new burst is started
                if (first_event_number_temp < expected_first_event_number) {
                    is_event_id_aligned = false;
-                   packets_per_burst = 0;
-                   cout<<"New burst is started, received at packet: "<< dec <<packets_per_burst 
-                       << " Event Number " << first_event_number_temp 
+                   cout<<"New burst is started "<<endl;
+                   cout<<"Packets received previous burst: "<<packets_per_burst<<endl
+                       <<"Broken flow packets previous burst: "<< flow_break_count<<endl
+                       <<"Total packets received: "<<packets_received<<endl
                        <<endl;
-                   cout<<"Broken packets: "<< flow_break_count<<endl;
+
+                   packets_per_burst = 0;
                    flow_break_count = 0;
-                   //cout<<"mep multiple? "<< abs((double) expected_first_event_number - (double) first_event_number_temp)/(double)mep_factor_temp<<endl;
                }
+
                //Check flow consistency
                if(!is_event_id_aligned){
                    is_event_id_aligned = true;
@@ -258,6 +236,11 @@ int main(int argc, char **argv){
                    //cout<<"mep multiple? "<< abs((double) expectedfirst_event_number - (double) first_event_number_temp)/(double)mep_factor_temp<<endl;
                    ++flow_break_count;
                }
+               delete mep;
+
+
+
+
 
                // hexdump((void*)&primitive,40);
                // cout<<"received from de4"<<endl;
@@ -309,7 +292,7 @@ int main(int argc, char **argv){
                if(!Timing.GetInBurst() || old_dim_phy/4 >= store_size - 20) {
                    break;
                }
-           } //end of while(a)
+           } //end of while(aaa)
 
         if(!Timing.GetInBurst() && InBurst){
             InBurst = 0;

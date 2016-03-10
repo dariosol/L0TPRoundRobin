@@ -13,3 +13,5 @@ export LD_LIBRARY_PATH=/lib:/usr/lib:/usr/local/lib
 sudo ifconfig enp2s0 hw ether 00:01:02:03:04:14
 sudo ifconfig enp2s0 192.168.1.20
 
+##Enlarge Queue
+sudo ./setLongQueque.sh 900000000
