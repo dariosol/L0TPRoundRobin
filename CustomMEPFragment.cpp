@@ -1,18 +1,10 @@
 /*
- * MEPFragment.cpp
- *
- *  Created on: Nov 14, 2011
- *      Author: Jonas Kunze (kunze.jonas@gmail.com)
+ *  Created on: Mar 10, 2015
+ *      Author: Marco Boretto marco.bore@gmail.com
  */
 
-
 #include <string>
-
 #include <iostream>
-//#include "options/Logging.h"
-
-//#include "exceptions/BrokenPacketReceivedError.h"
-
 #include "CustomMEP.h"  // forward declaration
 #include "CustomMEPFragment.h"
 
@@ -37,7 +29,6 @@ CustomMEPFragment::CustomMEPFragment(CustomMEP* mep, const MEPFragment_HDR *data
         ){
 			//			|| ((!(expectedEventNum % 3125)) && (expectedEventNum > 50))) {
 		std::cout<<"++++++++++++++MEP SourceID " << (uint)(mep->getSourceID()) << std::endl;
-		//std::cout<<"++++++++++++++MEP SourceSubID " << (uint)(mep->getSourceIDNum()) << std::endl;
 		std::cout<<"++++++++++++++MEP Length " << (uint)(mep->getLength()) << std::endl;
 		std::cout<<"++++++++++++++MEP FirstEvtNum " << (uint)(mep->getFirstEventNum()) << std::endl;
 		std::cout<<"++++++++++++++MEP mepFactor " << (uint)(mep->getNumberOfFragments()) << std::endl;
@@ -52,20 +43,9 @@ CustomMEPFragment::CustomMEPFragment(CustomMEP* mep, const MEPFragment_HDR *data
 			d++;
 		}
 	}
-	//if (rawData->eventNumberLSB_ != (expectedEventNum & 0x000000FF)) {
-	//	throw BrokenPacketReceivedError(
-	//			"MEPFragment with bad event number LSB received: received "
-	//			+ std::to_string(
-	//					(int) rawData->eventNumberLSB_)
-	//			+ " but expected LSB is "
-	//			+ std::to_string(expectedEventNum & 0x000000FF));
-	//}
 }
 
 CustomMEPFragment::~CustomMEPFragment() {
-	//if (mep_->deleteEvent()) {
-	//	delete mep_;
-	//}
 }
 
 /*
@@ -81,13 +61,6 @@ uint_fast8_t CustomMEPFragment::getSourceID() const {
 uint_fast8_t CustomMEPFragment::getSourceSubID() const {
 	return mep_->getSourceSubID();
 }
-
-///*
-// * The internally used number corresponding to the sourceID of this MEP event
-// */
-//uint_fast8_t CustomMEPFragment::getSourceIDNum() const {
-//	return mep_->getSourceIDNum();
-//}
 
 } /* namespace l0 */
 } /* namespace na62 */

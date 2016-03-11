@@ -1,8 +1,6 @@
 /*
- * MEPFragment.h
- *
- *  Created on: Nov 14, 2011
- *      Author: Jonas Kunze (kunze.jonas@gmail.com)
+ *  Created on: Mar 10, 2015
+ *      Author: Marco Boretto marco.bore@gmail.com
  */
 
 #pragma once
@@ -11,7 +9,6 @@
 
 #include <stdint.h>
 #include <boost/noncopyable.hpp>
-
 
 namespace na62 {
 namespace l0 {

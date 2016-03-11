@@ -1,8 +1,6 @@
 /*
- MEPHeader.cpp
- *
- *  Created on: Sep 21, 2011
- *      Author: Jonas Kunze (kunze.jonas@gmail.com)
+ *  Created on: Mar 10, 2015
+ *      Author: Marco Boretto marco.bore@gmail.com
  */
 
 #include "CustomMEP.h"
@@ -15,33 +13,14 @@
 #include <new>
 #include <string>
 
-//#include "exceptions/BrokenPacketReceivedError.h"
-//#include "../exceptions/UnknownSourceIDFound.h"
-//#include "../options/Options.h"
-
 namespace na62 {
 namespace l0 {
 
 
 CustomMEP::CustomMEP(const char *data, const uint_fast16_t & dataLength) :
-		rawData_(reinterpret_cast<const MEP_HDR*>(data)), checkSumsVarified_(
-		false) {
+		rawData_(reinterpret_cast<const MEP_HDR*>(data)) {
 
 	fragments_ = new CustomMEPFragment*[rawData_->eventCount];
-	//if (getLength() != dataLength) {
-	//	if (getLength() > dataLength) {
-	//		throw BrokenPacketReceivedError(
-	//				"Incomplete MEP! Received only "
-	//						+ std::to_string(dataLength) + " of "
-	//						+ std::to_string(getLength()) + " bytes");
-	//	} else {
-	//		throw BrokenPacketReceivedError(
-	//				"Received MEP longer than 'mep length' field! Received "
-	//						+ std::to_string(dataLength) + " instead of "
-	//						+ std::to_string(getLength()) + " bytes");
-	//	}
-	//}
-
 	initializeMEPFragments(data, dataLength);
 }
 
@@ -63,39 +42,15 @@ void CustomMEP::initializeMEPFragments(const char * data, const uint_fast16_t& d
 
 		expectedEventNum++;
 		fragments_[i] = newMEPFragment;
-		//if (newMEPFragment->getDataWithHeaderLength() + offset > dataLength) {
-		//	throw BrokenPacketReceivedError(
-		//			"Incomplete MEPFragment! Received only "
-		//					+ std::to_string(dataLength) + " of "
-		//					+ std::to_string(
-		//							offset
-		//									+ newMEPFragment->getDataWithHeaderLength())
-		//					+ " bytes");
-		//}
 		offset += newMEPFragment->getDataWithHeaderLength();
 	}
 
-	// Check if too many bytes have been transmitted
-	//if (offset < dataLength) {
-	//	throw BrokenPacketReceivedError(
-	//			"Sum of MEP events + MEP Header is smaller than expected: "
-	//					+ std::to_string(offset) + " instead of "
-	//					+ std::to_string(dataLength));
-	//}
 	eventCount_ = rawData_->eventCount;
 }
 
 CustomMEP::~CustomMEP() {
-	//if (eventCount_ > 0) {
-	//	/*
-	//	 * TODO: Just for testing. Should be deleted later to boost performance!
-	//	 */
-	//	throw NA62Error("Deleting non-empty MEP!!!");
-	//}
     int number = getNumberOfFragments();
-   ////std::cout<<"elm: "<<number<<std::endl; 
 	for (uint_fast16_t i = 0; i < number; i++) {
-    //   std::cout<<"elm: "<<i<<std::endl;·
        delete fragments_[i];
     }
 	delete[] fragments_;

@@ -1,6 +1,4 @@
 /*
- * Header.h
- *
  *  Created on: Mar 10, 2015
  *      Author: Marco Boretto marco.bore@gmail.com
  */
@@ -12,10 +10,6 @@
 #include <atomic>
 #include <cstdint>
 #include <boost/noncopyable.hpp>
-
-//#include "../eventBuilding/SourceIDManager.h"
-//#include "exceptions/BrokenPacketReceivedError.h"
-//#include "exceptions/UnknownSourceIDFound.h"
 
 #include "CustomMEP.h"
 #include "CustomMEPFragment.h"
@@ -80,15 +74,6 @@ public:
 		return rawData_->sourceID;
 	}
 
-//	/**
-//	 * This method is used to "plug holes" in the data source IDs. So if you have 3 sources being not in a row like {2, 5, 7}
-//	 * you would probably want to have an array with three entries, one for each source. For this you need a relation like 2->0, 5->1, 7->2.
-//	 * This is done by this method!
-//	 */
-//	inline uint_fast8_t getSourceIDNum() const {
-//		return SourceIDManager::sourceIDToNum(rawData_->sourceID);
-//	}
-
 	/**
 	 * Returns the event number of the first event fragment
 	 */
@@ -121,28 +106,12 @@ public:
 		return rawData_;
 	}
 
-	/**
-	 * Returns true if no more events are remaining (all have been processed and sent/deleted).
-	 * So if true this MEP can also be deleted (together with its original UDP packet)
-	 */
-	inline bool deleteEvent() {
-		/*
-		 * Decrement eventCount. If we reach 0 we can delete this object as all events have been processed.
-		 */
-
-		return eventCount_.fetch_sub(1) == 1;
-	}
-
-
 private:
 	std::atomic<int> eventCount_;
-
 	// Pointer to the payload of the UDP packet
 	const MEP_HDR* const rawData_;
 
 	CustomMEPFragment **fragments_;
-
-	bool checkSumsVarified_;
 };
 
 } /* namespace l2 */

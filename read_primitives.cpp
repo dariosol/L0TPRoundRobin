@@ -1,12 +1,11 @@
 #include <stdio.h>
 #include <iostream>
-
 #include <arpa/inet.h>
+
 #include <dic.hxx>
 
 #include "user2.h"
 #include "loopethernet.h"
-
 #include "CustomMEP.h"
 
 using namespace std;
@@ -126,7 +125,6 @@ int main(int argc, char **argv){
     memset(&adr_inet, 0, sizeof adr_inet);
     adr_inet.sin_family = AF_INET;
     adr_inet.sin_port = htons(PORT_DE4);
-
     adr_inet.sin_addr.s_addr =  inet_addr("192.168.1.20");//Addres of this computer
 
     if (adr_inet.sin_addr.s_addr == INADDR_NONE) {
@@ -160,18 +158,13 @@ int main(int argc, char **argv){
     /*******************RECEIVING FROM DE4***********************/
     signal(SIGINT, sighandler);
 
-    //cout<<"read to receive from de4"<<endl;
-
     //To check the stream order
     bool is_event_id_aligned = false;
     bool is_stream_broken = false;
     int flow_break_count = 0;
 
-    //Na62-farm-lib-function
-    //na62::DataContainer container;
     char * primitive_pointer = nullptr;
     na62::l0::CustomMEP* mep = nullptr;
-    //CustomMEP* mep = nullptr;
     int_fast16_t mep_factor_temp;
     uint_fast32_t first_event_number_temp;
     uint_fast32_t expected_first_event_number = 0;
@@ -191,8 +184,6 @@ int main(int argc, char **argv){
                        (struct sockaddr *) &adr_clnt,
                        (socklen_t*) &adr_clnt
                );
-
-               //cout << "Packet length: "<< length_received << endl;
 
                if ( length_received < 0 ) displayError("recvfrom(2)");
 
@@ -237,10 +228,6 @@ int main(int argc, char **argv){
                    ++flow_break_count;
                }
                delete mep;
-
-
-
-
 
                // hexdump((void*)&primitive,40);
                // cout<<"received from de4"<<endl;
