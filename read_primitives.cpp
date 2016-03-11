@@ -24,19 +24,10 @@ int packets_received = 0;
 int packets_per_burst = 0;
 int packets_sent = 0;
 
-#define debug 0
-#define debug_rate 0
-
 #define store_size 4026530000
-#define buf_scale 1000
-#define tout 1000000.
-
-#define packet_offset 0
 
 #define PORT_DE4 58913
 #define PORT_FARM 58913 
-#define PACKET_TYPE_OFFSET 45
-int address_skip =1;
 
 class Burst : public DimClient {
     DimUpdatedInfo Sob;
@@ -96,7 +87,7 @@ void sighandler(int i){
 }
 
 int main(int argc, char **argv){
-    int aaa=1;
+    signal(SIGINT, sighandler);
 
     //Burst Timing;
     FakeDim Timing;
@@ -121,7 +112,7 @@ int main(int argc, char **argv){
         displayError("Error opening socket to fpga");
     }
 
-    /*---RECEIVING FROM DE4------------*/
+    /*******************RECEIVING FROM DE4***********************/
     memset(&adr_inet, 0, sizeof adr_inet);
     adr_inet.sin_family = AF_INET;
     adr_inet.sin_port = htons(PORT_DE4);
@@ -155,8 +146,6 @@ int main(int argc, char **argv){
     len_inet1 = sizeof adr_inet1;
     //bind(toFARM, (struct sockaddr *)&adr_inet1,len_inet1);
 
-    /*******************RECEIVING FROM DE4***********************/
-    signal(SIGINT, sighandler);
 
     //To check the stream order
     bool is_event_id_aligned = false;
@@ -169,6 +158,10 @@ int main(int argc, char **argv){
     uint_fast32_t first_event_number_temp;
     uint_fast32_t expected_first_event_number = 0;
 
+    int mep_jump;
+    int n_ip_to_skip;
+    bool is_skip_int;
+
     while(1){
            InBurst = 1;
            new_eob = 0;
@@ -176,7 +169,7 @@ int main(int argc, char **argv){
            old_dim_phy = 0;
            old_dim_eob = 0;
 
-           while(aaa){
+           while(1){
                length_received = recvfrom(fromDE4,
                        primitive,
                        2048, // Max recv buf size   */
@@ -191,7 +184,8 @@ int main(int argc, char **argv){
                    ++packets_received;
                    ++packets_per_burst;
                }
-
+               n_ip_to_skip = 0;
+//I can remove this
                primitive_pointer = primitive;
 
                mep = new na62::l0::CustomMEP(primitive_pointer, length_received);
@@ -209,22 +203,32 @@ int main(int argc, char **argv){
 
                    packets_per_burst = 0;
                    flow_break_count = 0;
+                   nIP = 0;
                }
 
                //Check flow consistency
-               if(!is_event_id_aligned){
-                   is_event_id_aligned = true;
-                   //cout<<"Mp recognised: "<< dec << mep_factor_temp <<endl;
-                   expected_first_event_number = first_event_number_temp;
-               } else {
+               if(is_event_id_aligned){
                    expected_first_event_number = expected_first_event_number + mep_factor_temp;
+               } else {
+                   expected_first_event_number = first_event_number_temp;
+                   is_event_id_aligned = true;
                }
 
                if (first_event_number_temp > expected_first_event_number) {
+                   mep_jump = first_event_number_temp - expected_first_event_number;
+                   n_ip_to_skip = (first_event_number_temp - expected_first_event_number)/mep_factor_temp;
+                   if ((first_event_number_temp - expected_first_event_number) % mep_factor_temp == 0 ) {
+                       is_skip_int = true;
+                   } else {
+                       is_skip_int = false;
+                   }
+                   cout << "Mep Jump: "<< mep_jump<<endl
+                        << "Packets count: "<< packets_received<<endl
+                        << "Ip to Skip: "<< n_ip_to_skip<<endl
+                        << "Is skip int?: "<< is_skip_int<<endl
+                        <<endl;
                    is_event_id_aligned = false;
                    is_stream_broken = true;
-                   //cout<<"Stream Broken at packet: "<< dec <<packets_per_burst << " expecting: "<< expected_first_event_number << " instead: " << first_event_number_temp <<endl;
-                   //cout<<"mep multiple? "<< abs((double) expectedfirst_event_number - (double) first_event_number_temp)/(double)mep_factor_temp<<endl;
                    ++flow_break_count;
                }
                delete mep;
@@ -232,6 +236,14 @@ int main(int argc, char **argv){
                // hexdump((void*)&primitive,40);
                // cout<<"received from de4"<<endl;
 
+               /*
+                * Increase packets number and set back to 1
+                */
+               ++nIP;
+               nIP = nIP + n_ip_to_skip;
+               while (nIP > argc-1) {
+                   nIP = nIP - (argc -1);
+               }
                /******************SENDING TO FARM****************************/
                adr_inet1.sin_addr.s_addr =  inet_addr(argv[nIP]);
                length_sent = sendto(toFARM,
@@ -248,33 +260,12 @@ int main(int argc, char **argv){
                } else {
                    cout<<"packet not sent"<<endl;
                }
-               //cout<<"nIP: "<<argv[nIP]<<" packets_sent: "<<packets_sent<<endl;
 
-               /*
-                * Loop on all packets
-                * and set back to 1
-                */
-               if (address_skip == 0) {
-                   if (packets_sent%address_skip == 0 || packets_sent == 1) {
-                       if (nIP != argc-1) {
-                           ++nIP;
-                       } else {
-                           nIP = 1;
-                       }
-                   }
-               } else {
-                   if (packets_sent%address_skip == 0) {
-                       if(nIP!=argc-1) {
-                           ++nIP;
-                       }else{
-                           nIP = 1;
-                       }
-                   }
-               }
-
-               if ( length_sent < 0 ) {
-                   displayError("sendto(2)");
-               }
+               //if(nIP!=argc-1) {
+               //    ++nIP;
+               //}else{
+               //    nIP = 1;
+               //}
 
                if(!Timing.GetInBurst() || old_dim_phy/4 >= store_size - 20) {
                    break;
