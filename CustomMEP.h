@@ -11,7 +11,6 @@
 #include <cstdint>
 #include <boost/noncopyable.hpp>
 
-#include "CustomMEP.h"
 #include "CustomMEPFragment.h"
 
 namespace na62 {

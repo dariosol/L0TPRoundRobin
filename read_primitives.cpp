@@ -89,8 +89,8 @@ void sighandler(int i){
 int main(int argc, char **argv){
     signal(SIGINT, sighandler);
 
-    //Burst Timing;
-    FakeDim Timing;
+    Burst Timing;
+    //FakeDim Timing;
 
     int InBurst = 0;
 
@@ -185,7 +185,7 @@ int main(int argc, char **argv){
                    ++packets_per_burst;
                }
                n_ip_to_skip = 0;
-//I can remove this
+               //I can remove this
                primitive_pointer = primitive;
 
                mep = new na62::l0::CustomMEP(primitive_pointer, length_received);
