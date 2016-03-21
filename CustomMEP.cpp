@@ -17,32 +17,46 @@ namespace na62 {
 namespace l0 {
 
 
-CustomMEP::CustomMEP(const char *data, const uint_fast16_t & dataLength) :
-		rawData_(reinterpret_cast<const MEP_HDR*>(data)) {
+CustomMEP::CustomMEP(int max_mep_number){ 
 
-	fragments_ = new CustomMEPFragment*[rawData_->eventCount];
-	initializeMEPFragments(data, dataLength);
+        rawData_ = nullptr;
+	fragments_ = new CustomMEPFragment*[max_mep_number];
+
+	// The first subevent starts directly after the header -> offset is 12
+	uint_fast16_t offset = sizeof(MEP_HDR);
+	CustomMEPFragment* newMEPFragment;
+	for (uint_fast16_t i = 0; i < max_mep_number; i++) {
+		/*
+		 *  Throws exception if the event number LSB has an unexpected value
+		 */
+		newMEPFragment = new CustomMEPFragment(this);
+
+		fragments_[i] = newMEPFragment;
+	}
+
+	//initializeMEPFragments(data, dataLength);
 }
 
 
 void CustomMEP::initializeMEPFragments(const char * data, const uint_fast16_t& dataLength) {
 
+        is_last_burst_packet_ = false;
+	rawData_ = reinterpret_cast<const MEP_HDR*>(data);
+		
 	// The first subevent starts directly after the header -> offset is 12
 	uint_fast16_t offset = sizeof(MEP_HDR);
 
-	CustomMEPFragment* newMEPFragment;
 	uint_fast32_t expectedEventNum = getFirstEventNum();
 
 	for (uint_fast16_t i = 0; i < getNumberOfFragments(); i++) {
-		/*
-		 *  Throws exception if the event number LSB has an unexpected value
-		 */
-		newMEPFragment = new CustomMEPFragment(this,
-				(MEPFragment_HDR*) (data + offset), expectedEventNum);
+                fragments_[i]->initilizeCustomMEPFragment((MEPFragment_HDR*) (data + offset), expectedEventNum);
+                if (fragments_[i]->isLastEventOfBurst()) {
 
+                    is_last_burst_packet_ = true;
+                    //std::cout<<"I'm the last fragment of the burst!"<<std::endl;
+                }
 		expectedEventNum++;
-		fragments_[i] = newMEPFragment;
-		offset += newMEPFragment->getDataWithHeaderLength();
+		offset += fragments_[i]->getDataWithHeaderLength();
 	}
 
 	eventCount_ = rawData_->eventCount;

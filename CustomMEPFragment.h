@@ -31,7 +31,12 @@ struct MEPFragment_HDR {
 
 class CustomMEPFragment: private boost::noncopyable {
 public:
-	CustomMEPFragment(CustomMEP* mep, const MEPFragment_HDR * data, uint_fast32_t& expectedEventNum);
+	//CustomMEPFragment(CustomMEP* mep, const MEPFragment_HDR * data, uint_fast32_t& expectedEventNum);
+	CustomMEPFragment(CustomMEP* mep);
+
+        void initilizeCustomMEPFragment(const MEPFragment_HDR *data,
+		uint_fast32_t& expectedEventNum); 
+
 	virtual ~CustomMEPFragment();
 
 	/**
@@ -92,7 +97,7 @@ private:
 	CustomMEP* mep_;
 	const MEPFragment_HDR * rawData;
 
-	const uint_fast32_t eventNumber_;
+	uint_fast32_t eventNumber_;
 };
 
 } /* namespace l0 */

@@ -12,9 +12,15 @@ using namespace na62;
 namespace na62 {
 namespace l0 {
 
-CustomMEPFragment::CustomMEPFragment(CustomMEP* mep, const MEPFragment_HDR *data,
-		uint_fast32_t& expectedEventNum) :
-		mep_(mep), rawData(data), eventNumber_(expectedEventNum) {
+CustomMEPFragment::CustomMEPFragment(CustomMEP* mep) :
+		mep_(mep) {
+}
+
+void CustomMEPFragment::initilizeCustomMEPFragment(const MEPFragment_HDR *data,
+		uint_fast32_t& expectedEventNum) {
+         rawData = data;
+         eventNumber_ = expectedEventNum;
+
 	/*
 	 * Cite from NA62-11-02:
 	 * Event number LSB: the least significant 16 bits of the event number, as defined inside the
@@ -28,10 +34,10 @@ CustomMEPFragment::CustomMEPFragment(CustomMEP* mep, const MEPFragment_HDR *data
 	if (rawData->eventNumberLSB_ != (expectedEventNum & 0x000000FF)
         ){
 			//			|| ((!(expectedEventNum % 3125)) && (expectedEventNum > 50))) {
-		std::cout<<"++++++++++++++MEP SourceID " << (uint)(mep->getSourceID()) << std::endl;
-		std::cout<<"++++++++++++++MEP Length " << (uint)(mep->getLength()) << std::endl;
-		std::cout<<"++++++++++++++MEP FirstEvtNum " << (uint)(mep->getFirstEventNum()) << std::endl;
-		std::cout<<"++++++++++++++MEP mepFactor " << (uint)(mep->getNumberOfFragments()) << std::endl;
+		std::cout<<"++++++++++++++MEP SourceID " << (uint)(mep_->getSourceID()) << std::endl;
+		std::cout<<"++++++++++++++MEP Length " << (uint)(mep_->getLength()) << std::endl;
+		std::cout<<"++++++++++++++MEP FirstEvtNum " << (uint)(mep_->getFirstEventNum()) << std::endl;
+		std::cout<<"++++++++++++++MEP mep_Factor " << (uint)(mep_->getNumberOfFragments()) << std::endl;
 		std::cout<<"++++++++++++++ExpEvtNum " << (uint)expectedEventNum << std::endl;
 
 		int* d=(int*)data;

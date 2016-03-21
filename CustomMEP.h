@@ -45,7 +45,8 @@ public:
 	/**
 	 * Reads the data coming from L0 and initializes the corresponding fields
 	 */
-	CustomMEP(const char *data, const uint_fast16_t & dataLength);
+	//CustomMEP(const char *data, const uint_fast16_t & dataLength);
+	CustomMEP(int max_mep_number);
 
 	/**
 	 * Frees the data buffer (orignialData) that was created by the Receiver
@@ -105,11 +106,15 @@ public:
 		return rawData_;
 	}
 
+	inline bool isLastBurstPacket() {
+		return is_last_burst_packet_;
+	}
+
 private:
 	std::atomic<int> eventCount_;
 	// Pointer to the payload of the UDP packet
-	const MEP_HDR* const rawData_;
-
+	const MEP_HDR* rawData_;
+        bool is_last_burst_packet_;
 	CustomMEPFragment **fragments_;
 };
 
