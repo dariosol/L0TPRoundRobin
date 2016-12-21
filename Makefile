@@ -43,3 +43,4 @@ receiver: receiver.o
 
 clean:
 	rm -f $(BINDIR)/read_primitives $(BINDIR)/*.o
+

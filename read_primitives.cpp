@@ -79,7 +79,7 @@ int main(int argc, char **argv){
     if (fromDE4 == -1) {
         displayError("Error opening socket to fpga");
     }
-
+  
     /*******************RECEIVING FROM DE4***********************/
     memset(&adr_inet, 0, sizeof adr_inet);
     adr_inet.sin_family = AF_INET;
@@ -144,7 +144,6 @@ int main(int argc, char **argv){
             cout<<"Error Receiving packet"<<endl;
             continue; 
         }   
-
         ++packets_received;
         ++packets_per_burst;
         n_ip_to_skip = 0;
