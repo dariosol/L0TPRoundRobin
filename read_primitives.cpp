@@ -152,9 +152,9 @@ int main(int argc, char **argv){
         //I can remove this
         primitive_pointer = primitive;
 
-        //mep = new na62::l0::CustomMEP(primitive_pointer, length_received);
         mep->initializeMEPFragments(primitive_pointer, length_received);
 	mep_subID = mep->getSourceSubID();
+	//Debug packet for website
 	if(mep_subID==0xff){
 	  debugfile.open ("debug.bin", ios::out | ios::binary);
 	  debugfile.write (primitive, length_received);
@@ -168,6 +168,7 @@ int main(int argc, char **argv){
 	if ( ! mep->isLastBurstPacket() ) {
             mep_factor_temp = mep->getNumberOfFragments();
         }
+
 
         //understand if a new burst is started
         if (first_event_number_temp < expected_first_event_number) {
