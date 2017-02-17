@@ -2,7 +2,7 @@
 #include <iostream>
 #include <arpa/inet.h>
 #include <vector>
-
+#include <fstream>     
 
 #include <dic.hxx>
 
@@ -56,7 +56,7 @@ void sighandler(int i){
 int main(int argc, char **argv){
     signal(SIGINT, sighandler);
 
-
+    ofstream debugfile;
     vector<char*> farm_ip; 
 
     /*
@@ -126,6 +126,7 @@ int main(int argc, char **argv){
     uint_fast32_t first_event_number_temp;
     uint_fast32_t expected_first_event_number = 0;
 
+    uint_fast8_t mep_subID=0;
     int mep_jump;
     int n_ip_to_skip;
     bool is_skip_int;
@@ -153,7 +154,16 @@ int main(int argc, char **argv){
 
         //mep = new na62::l0::CustomMEP(primitive_pointer, length_received);
         mep->initializeMEPFragments(primitive_pointer, length_received);
-
+	mep_subID = mep->getSourceSubID();
+	if(mep_subID==0xff){
+	  debugfile.open ("debug.bin", ios::out | ios::binary);
+	  debugfile.write (primitive, length_received);
+	  debugfile.close();
+	  system("sudo mv debug.bin /var/www/html");
+	  system("restorecon -R /var/www");
+	  continue;
+	}
+	
         first_event_number_temp = mep->getFirstEventNum();
 	if ( ! mep->isLastBurstPacket() ) {
             mep_factor_temp = mep->getNumberOfFragments();
