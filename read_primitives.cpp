@@ -123,6 +123,8 @@ int main(int argc, char **argv){
     na62::l0::CustomMEP* mep = new na62::l0::CustomMEP(20);
 
     int_fast16_t mep_factor_temp;
+    int_fast16_t previous_mep_factor=8;
+    
     uint_fast32_t first_event_number_temp;
     uint_fast32_t expected_first_event_number = 0;
 
@@ -130,6 +132,7 @@ int main(int argc, char **argv){
     int mep_jump;
     int n_ip_to_skip;
     bool is_skip_int;
+    bool merge=0;
     nIP = 0;
 
     while(1){
@@ -169,7 +172,7 @@ int main(int argc, char **argv){
             mep_factor_temp = mep->getNumberOfFragments();
         }
 
-
+	
         //understand if a new burst is started
         if (first_event_number_temp < expected_first_event_number) {
             is_event_id_aligned = false;
@@ -178,12 +181,12 @@ int main(int argc, char **argv){
                 <<"Broken flow packets previous burst: "<< flow_break_count<<endl
                 <<"Total packets received: "<<packets_received<<endl
                 <<endl;
-
+	    merge = 0;
+	    previous_mep_factor=mep->getNumberOfFragments();
             packets_per_burst = 0;
             flow_break_count = 0;
-            nIP = 0;
+            //nIP = 0;
             nIP = first_event_number_temp % farm_ip.size();
-
         }
 
         //Check flow consistency
@@ -194,7 +197,7 @@ int main(int argc, char **argv){
             is_event_id_aligned = true;
         }
 
-        if (first_event_number_temp > expected_first_event_number) {
+        if ((first_event_number_temp > expected_first_event_number) && (mep_factor_temp == previous_mep_factor) && mep->isLastBurstPacket()==0 ) {
             mep_jump = first_event_number_temp - expected_first_event_number;
             n_ip_to_skip = (first_event_number_temp - expected_first_event_number)/mep_factor_temp;
             if ((first_event_number_temp - expected_first_event_number) % mep_factor_temp == 0 ) {
@@ -206,6 +209,7 @@ int main(int argc, char **argv){
                  << "Packets count: "<< packets_received<<endl
                  << "Ip to Skip: "<< n_ip_to_skip<<endl
                  << "Is skip int?: "<< is_skip_int<<endl
+		 <<"MERGE: "<<merge<<endl
                  <<endl;
             is_event_id_aligned = false;
             is_stream_broken = true;
@@ -215,18 +219,34 @@ int main(int argc, char **argv){
         /*
          * Increase packets number and set back to 1
          */
-        ++nIP;
+	/*
+	++nIP;
         nIP = nIP + n_ip_to_skip;
         while (nIP > argc-1) {
             nIP = nIP - (argc -1);
-        }
+	    }*/
 
         /******************SENDING TO FARM****************************/
         //adr_inet1.sin_addr.s_addr =  inet_addr(argv[nIP]);
         //cout<<"Event number: "<<first_event_number_temp<<" Directed to: "<<farm_ip[(first_event_number_temp/mep_factor_temp) % farm_ip.size()]<<endl;
-        
-        adr_inet1.sin_addr.s_addr =  inet_addr(farm_ip[(first_event_number_temp/mep_factor_temp) % farm_ip.size()]);
 
+	if(mep_factor_temp < previous_mep_factor && !mep->isLastBurstPacket()) {
+	  merge=1;
+	  cout<<"previous_mep_factor "<< previous_mep_factor<<endl<<"mep_factor_temp "<<mep_factor_temp<<endl;
+	}
+	
+
+	
+	if(merge==1 && mep->isLastBurstPacket()==1)  adr_inet1.sin_addr.s_addr =  adr_inet1.sin_addr.s_addr;
+
+	if(merge==0) adr_inet1.sin_addr.s_addr =  inet_addr(farm_ip[(first_event_number_temp/mep_factor_temp) % farm_ip.size()]);
+
+	if(merge==1 &&  mep->isLastBurstPacket()==0)  adr_inet1.sin_addr.s_addr =  inet_addr(farm_ip[(first_event_number_temp/previous_mep_factor) % farm_ip.size()]);
+
+	previous_mep_factor =  mep_factor_temp;
+
+	if(merge==1)cout<<" IP "<< adr_inet1.sin_addr.s_addr<<endl;
+	 
         length_sent = sendto(toFARM,
                 primitive,
                 length_received,
@@ -240,8 +260,11 @@ int main(int argc, char **argv){
             continue; 
         }   
         ++packets_sent;
-    } 
+	
+    }
+    
     delete mep;
+    
 return 0;
 }
 
