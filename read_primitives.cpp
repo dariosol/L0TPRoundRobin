@@ -159,11 +159,12 @@ int main(int argc, char **argv){
 	mep_subID = mep->getSourceSubID();
 	//Debug packet for website
 	if(mep_subID==0xff){
-	  debugfile.open ("debug.bin", ios::out | ios::binary);
+	  debugfile.open ("/home/na62l0tp2/de4_usb_controller/de4_status/debug.bin", ios::out | ios::binary);
 	  debugfile.write (primitive, length_received);
-	  debugfile.close();
-	  system("sudo mv debug.bin /var/www/html");
-	  system("restorecon -R /var/www");
+	  debugfile.close();  
+	  //system("sudo cp /home/na62l0tp2/de4_usb_controller/de4_status/debug.bin /var/www/html");
+	  system("k5start -f .na62om.keytab; aklog; cp /home/na62l0tp2/de4_usb_controller/de4_status/debug.bin /afs/cern.ch/user/n/na62om/www/l0tp/");
+	  //system("restorecon -R /var/www");
 	  continue;
 	}
 	
