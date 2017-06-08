@@ -163,7 +163,7 @@ int main(int argc, char **argv){
 	  debugfile.write (primitive, length_received);
 	  debugfile.close();  
 	  //system("sudo cp /home/na62l0tp2/de4_usb_controller/de4_status/debug.bin /var/www/html");
-	  system("k5start -f .na62om.keytab; aklog; cp /home/na62l0tp2/de4_usb_controller/de4_status/debug.bin /afs/cern.ch/user/n/na62om/www/l0tp/");
+	  system("k5start -f /home/na62om/.na62om.keytab na62om@CERN.CH; aklog; cp /home/na62l0tp2/de4_usb_controller/de4_status/debug.bin /afs/cern.ch/user/n/na62om/www/l0tp/");
 	  //system("restorecon -R /var/www");
 	  continue;
 	}
