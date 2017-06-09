@@ -162,9 +162,7 @@ int main(int argc, char **argv){
 	  debugfile.open ("/home/na62l0tp2/de4_usb_controller/de4_status/debug.bin", ios::out | ios::binary);
 	  debugfile.write (primitive, length_received);
 	  debugfile.close();  
-	  //system("sudo cp /home/na62l0tp2/de4_usb_controller/de4_status/debug.bin /var/www/html");
 	  system("k5start -f /home/na62om/.na62om.keytab na62om@CERN.CH; aklog; cp /home/na62l0tp2/de4_usb_controller/de4_status/debug.bin /afs/cern.ch/user/n/na62om/www/l0tp/");
-	  //system("restorecon -R /var/www");
 	  continue;
 	}
 	
@@ -186,7 +184,6 @@ int main(int argc, char **argv){
 	    previous_mep_factor=mep->getNumberOfFragments();
             packets_per_burst = 0;
             flow_break_count = 0;
-            //nIP = 0;
             nIP = first_event_number_temp % farm_ip.size();
         }
 
@@ -217,19 +214,7 @@ int main(int argc, char **argv){
             ++flow_break_count;
         }
 
-        /*
-         * Increase packets number and set back to 1
-         */
-	/*
-	++nIP;
-        nIP = nIP + n_ip_to_skip;
-        while (nIP > argc-1) {
-            nIP = nIP - (argc -1);
-	    }*/
-
         /******************SENDING TO FARM****************************/
-        //adr_inet1.sin_addr.s_addr =  inet_addr(argv[nIP]);
-        //cout<<"Event number: "<<first_event_number_temp<<" Directed to: "<<farm_ip[(first_event_number_temp/mep_factor_temp) % farm_ip.size()]<<endl;
 
 	if(mep_factor_temp < previous_mep_factor && !mep->isLastBurstPacket()) {
 	  merge=1;
