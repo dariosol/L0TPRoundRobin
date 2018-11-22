@@ -162,7 +162,7 @@ int main(int argc, char **argv){
 	  debugfile.open ("/home/na62l0tp2/de4_usb_controller/de4_status/debug.bin", ios::out | ios::binary);
 	  debugfile.write (primitive, length_received);
 	  debugfile.close();  
-	  system("k5start -f /home/na62om/.na62om.keytab na62om@CERN.CH; aklog; xrdcp -f /home/na62l0tp2/de4_usb_controller/de4_status/debug.bin root://eosuser//eos/user/n/na62om/www/l0tp/");
+	  system("k5start -f /home/na62om/.na62om.keytab na62om@CERN.CH; aklog; xrdcp -f /home/na62l0tp2/de4_usb_controller/de4_status/debug.bin root://eosuser//eos/user/n/na62om/www/l0tp/ &");
 	  continue;
 	}
 	
